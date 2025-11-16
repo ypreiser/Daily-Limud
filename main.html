@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <title>מחולל תוכנית לימוד אישית ליומן גוגל</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background: white;
+            padding: 30px 40px;
+            border-radius: 10px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 550px;
+            width: 100%;
+        }
+        h1 {
+            color: #1c1e21;
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+        p {
+            color: #606770;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            text-align: right;
+            margin-bottom: 30px;
+        }
+        .form-grid label {
+            font-weight: bold;
+            color: #4b4f56;
+            padding-top: 8px;
+        }
+        .form-grid select, .form-grid input {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #dddfe2;
+            border-radius: 6px;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 12px 25px;
+            font-size: 18px;
+            font-weight: bold;
+            color: white;
+            background: linear-gradient(45deg, #007bff, #0056b3);
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0, 123, 255, 0.3);
+        }
+        .full-width {
+            grid-column: 1 / -1;
+        }
+        .instructions {
+            text-align: right;
+            font-size: 14px;
+            color: #606770;
+            margin-top: 30px;
+            border-top: 1px solid #e0e0e0;
+            padding-top: 20px;
+        }
+         .instructions h2 {
+            font-size: 16px;
+            color: #1c1e21;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>תוכנית לימוד אישית ליומן גוגל</h1>
+        <p>הגדירו את הלימוד הרצוי, וצרו קובץ לייבוא קל ומהיר ליומן.</p>
+
+        <div class="form-grid">
+            <label for="study_subject">נושא הלימוד:</label>
+            <select id="study_subject"></select>
+
+            <label for="duration_years">משך התוכנית (בשנים):</label>
+            <input type="number" id="duration_years" value="1" min="1">
+
+            <label for="start_date">תאריך התחלה:</label>
+            <input type="date" id="start_date">
+            
+            <div class="full-width">
+                 <button onclick="generateAndDownloadCSV()">צור קובץ ליומן גוגל</button>
+            </div>
+        </div>
+        
+        <div class="instructions">
+            <h2>הוראות ייבוא ליומן גוגל:</h2>
+            <ol>
+                <li>לחצו על גלגל השיניים (הגדרות) ובחרו <strong>"הגדרות"</strong>.</li>
+                <li>בתפריט הצד, לחצו על <strong>"ייבוא וייצוא"</strong>.</li>
+                <li>בחרו את הקובץ שהורדתם מהמחשב.</li>
+                <li>בחרו את היומן אליו תרצו לייבא את האירועים.</li>
+                <li>לחצו <strong>"ייבא"</strong>.</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        // --- DATA STRUCTURES FOR ALL STUDY SUBJECTS ---
+        const studyData = {
+            mishnah: {
+                name: 'משנה (פרק יומי)',
+                unit: 'פרק',
+                *generator() {
+                    const data = [
+                        { seder: 'זרעים', masechtot: [{n:'פאה',c:8},{n:'דמאי',c:7},{n:'כלאים',c:9},{n:'שביעית',c:10},{n:'תרומות',c:11},{n:'מעשרות',c:5},{n:'מעשר שני',c:5},{n:'חלה',c:4},{n:'ערלה',c:3},{n:'ביכורים',c:4}] },
+                        { seder: 'מועד', masechtot: [{n:'שבת',c:24},{n:'עירובין',c:10},{n:'פסחים',c:10},{n:'שקלים',c:8},{n:'יומא',c:8},{n:'סוכה',c:5},{n:'ביצה',c:5},{n:'ראש השנה',c:4},{n:'תענית',c:4},{n:'מגילה',c:4},{n:'מועד קטן',c:3},{n:'חגיגה',c:3}] },
+                        { seder: 'נשים', masechtot: [{n:'יבמות',c:16},{n:'כתובות',c:13},{n:'נדרים',c:11},{n:'נזיר',c:9},{n:'סוטה',c:9},{n:'גיטין',c:9},{n:'קידושין',c:4}] },
+                        { seder: 'נזיקין', masechtot: [{n:'בבא קמא',c:10},{n:'בבא מציעא',c:10},{n:'בבא בתרא',c:10},{n:'סנהדרין',c:11},{n:'מכות',c:3},{n:'שבועות',c:8},{n:'עדיות',c:8},{n:'עבודה זרה',c:5},{n:'אבות',c:6},{n:'הוריות',c:3}] },
+                        { seder: 'קדשים', masechtot: [{n:'זבחים',c:14},{n:'מנחות',c:13},{n:'חולין',c:12},{n:'בכורות',c:9},{n:'ערכין',c:9},{n:'תמורה',c:7},{n:'כריתות',c:6},{n:'מעילה',c:6},{n:'תמיד',c:7},{n:'מידות',c:5},{n:'קינים',c:3}] },
+                        { seder: 'טהרות', masechtot: [{n:'כלים',c:30},{n:'אהלות',c:18},{n:'נגעים',c:14},{n:'פרה',c:12},{n:'טהרות',c:10},{n:'מקוואות',c:10},{n:'נידה',c:10},{n:'מכשירין',c:6},{n:'זבים',c:5},{n:'טבול יום',c:4},{n:'ידיים',c:4},{n:'עוקצין',c:3}] }
+                    ];
+                    for (const seder of data) {
+                        for (const masechet of seder.masechtot) {
+                            for (let i = 1; i <= masechet.c; i++) {
+                                yield `${masechet.n} ${toHebrewNumber(i)}`;
+                            }
+                        }
+                    }
+                }
+            },
+            bavli: {
+                name: 'תלמוד בבלי (דף יומי)',
+                unit: 'דף',
+                *generator() {
+                    const masechtot = [{n:'ברכות',s:2,e:64},{n:'שבת',s:2,e:157},{n:'עירובין',s:2,e:105},{n:'פסחים',s:2,e:121},{n:'שקלים',s:2,e:22},{n:'יומא',s:2,e:88},{n:'סוכה',s:2,e:56},{n:'ביצה',s:2,e:40},{n:'ראש השנה',s:2,e:35},{n:'תענית',s:2,e:31},{n:'מגילה',s:2,e:32},{n:'מועד קטן',s:2,e:29},{n:'חגיגה',s:2,e:27},{n:'יבמות',s:2,e:122},{n:'כתובות',s:2,e:112},{n:'נדרים',s:2,e:91},{n:'נזיר',s:2,e:66},{n:'סוטה',s:2,e:49},{n:'גיטין',s:2,e:90},{n:'קידושין',s:2,e:82},{n:'בבא קמא',s:2,e:119},{n:'בבא מציעא',s:2,e:119},{n:'בבא בתרא',s:2,e:176},{n:'סנהדרין',s:2,e:113},{n:'מכות',s:2,e:24},{n:'שבועות',s:2,e:49},{n:'עבודה זרה',s:2,e:76},{n:'הוריות',s:2,e:14},{n:'זבחים',s:2,e:120},{n:'מנחות',s:2,e:110},{n:'חולין',s:2,e:142},{n:'בכורות',s:2,e:61},{n:'ערכין',s:2,e:34},{n:'תמורה',s:2,e:34},{n:'כריתות',s:2,e:28},{n:'מעילה',s:2,e:22},{n:'תמיד',s:25,e:33},{n:'נידה',s:2,e:73}];
+                    for (const masechet of masechtot) {
+                        for (let i = masechet.s; i <= masechet.e; i++) {
+                            yield `${masechet.n} ${toHebrewNumber(i)}`;
+                        }
+                    }
+                }
+            },
+            rambam: {
+                name: 'רמב"ם (פרק יומי)',
+                unit: 'פרק',
+                *generator() {
+                    const data = [{"book":"מדע","parts":[{"abbr":"יסוה\"ת","c":10},{"abbr":"דעות","c":7},{"abbr":"ת\"ת","c":7},{"abbr":"ע\"ז","c":12},{"abbr":"תשובה","c":10}]},{"book":"אהבה","parts":[{"abbr":"ק\"ש","c":4},{"abbr":"תפילה","c":15},{"abbr":"תפילין","c":10},{"abbr":"ציצית","c":3},{"abbr":"ברכות","c":11},{"abbr":"מילה","c":3}]},{"book":"זמנים","parts":[{"abbr":"שבת","c":30},{"abbr":"עירובין","c":8},{"abbr":"שביתת עשור","c":3},{"abbr":"שביתת יו\"ט","c":8},{"abbr":"חמץ ומצה","c":8},{"abbr":"שו\"ס ולולב","c":8},{"abbr":"שקלים","c":4},{"abbr":"קידוש החודש","c":19},{"abbr":"תעניות","c":5},{"abbr":"מגילה וחנוכה","c":4}]},{"book":"נשים","parts":[{"abbr":"אישות","c":25},{"abbr":"גירושין","c":13},{"abbr":"יבום וחליצה","c":8},{"abbr":"נערה בתולה","c":3},{"abbr":"סוטה","c":4}]},{"book":"קדושה","parts":[{"abbr":"איסורי ביאה","c":22},{"abbr":"מאכלות אסורות","c":17},{"abbr":"שחיטה","c":14}]},{"book":"הפלאה","parts":[{"abbr":"שבועות","c":12},{"abbr":"נדרים","c":13},{"abbr":"נזירות","c":10},{"abbr":"ערכים","c":8}]},{"book":"זרעים","parts":[{"abbr":"כלאים","c":10},{"abbr":"מתנות עניים","c":10},{"abbr":"תרומות","c":15},{"abbr":"מעשרות","c":14},{"abbr":"מע\"ש","c":11},{"abbr":"ביכורים","c":12},{"abbr":"שמיטה","c":13}]},{"book":"עבודה","parts":[{"abbr":"בית הבחירה","c":8},{"abbr":"כלי המקדש","c":10},{"abbr":"ביאת המקדש","c":9},{"abbr":"איסורי מזבח","c":7},{"abbr":"מעשה הקרבנות","c":19},{"abbr":"תמו\"ס","c":10},{"abbr":"פסולי המוקדשין","c":19},{"abbr":"עבודת יוה\"כ","c":5},{"abbr":"מעילה","c":8}]},{"book":"קרבנות","parts":[{"abbr":"קרבן פסח","c":10},{"abbr":"חגיגה","c":3},{"abbr":"בכורות","c":8},{"abbr":"שגגות","c":15},{"abbr":"מחוסרי כפרה","c":5},{"abbr":"תמורה","c":4}]},{"book":"טהרה","parts":[{"abbr":"טומאת מת","c":25},{"abbr":"פרה אדומה","c":15},{"abbr":"טומאת צרעת","c":16},{"abbr":"מטמאי משכב ומושב","c":13},{"abbr":"שאר אבות הטומאות","c":20},{"abbr":"טומאת אוכלין","c":16},{"abbr":"כלים","c":28},{"abbr":"מקואות","c":11}]},{"book":"נזיקין","parts":[{"abbr":"נזקי ממון","c":14},{"abbr":"גניבה","c":9},{"abbr":"גזילה ואבידה","c":18},{"abbr":"חובל ומזיק","c":8},{"abbr":"רוצח","c":13}]},{"book":"קניין","parts":[{"abbr":"מכירה","c":30},{"abbr":"זכייה ומתנה","c":12},{"abbr":"שכנים","c":14},{"abbr":"שלוחין ושותפין","c":10},{"abbr":"עבדים","c":9}]},{"book":"משפטים","parts":[{"abbr":"שכירות","c":13},{"abbr":"שאלה ופיקדון","c":8},{"abbr":"מלווה ולווה","c":27},{"abbr":"טוען ונטען","c":16},{"abbr":"נחלות","c":11}]},{"book":"שופטים","parts":[{"abbr":"סנהדרין","c":26},{"abbr":"עדות","c":22},{"abbr":"ממרים","c":4},{"abbr":"אבל","c":14},{"abbr":"מלכים","c":12}]}];
+                    for (const book of data) {
+                        for (const part of book.parts) {
+                            for (let i = 1; i <= part.c; i++) {
+                                yield `${part.abbr} ${toHebrewNumber(i)}`;
+                            }
+                        }
+                    }
+                }
+            },
+            shulchan_aruch: {
+                name: 'שולחן ערוך (סימן יומי)',
+                unit: 'סימן',
+                *generator() {
+                    const parts = [{n:"אורח חיים", abbr:"או\"ח", c:697},{n:"יורה דעה", abbr:"יו\"ד", c:403},{n:"אבן העזר", abbr:"אה\"ע", c:178},{n:"חושן משפט", abbr:"חו\"מ", c:427}];
+                    for (const part of parts) {
+                        for (let i = 1; i <= part.c; i++) {
+                            yield `${part.abbr} ${toHebrewNumber(i)}`;
+                        }
+                    }
+                }
+            },
+            mishnah_berurah: {
+                name: 'משנה ברורה (סימן יומי)',
+                unit: 'סימן',
+                *generator() {
+                    for (let i = 1; i <= 697; i++) {
+                        yield `סימן ${toHebrewNumber(i)}`;
+                    }
+                }
+            },
+            yerushalmi: {
+                name: 'תלמוד ירושלמי (דף יומי)',
+                unit: 'דף',
+                *generator() {
+                    const masechtot = [{"n":"ברכות","c":68},{"n":"פאה","c":40},{"n":"דמאי","c":35},{"n":"כלאים","c":58},{"n":"שביעית","c":45},{"n":"תרומות","c":67},{"n":"מעשרות","c":33},{"n":"מעשר שני","c":36},{"n":"חלה","c":28},{"n":"ערלה","c":21},{"n":"ביכורים","c":22},{"n":"שבת","c":138},{"n":"עירובין","c":88},{"n":"פסחים","c":80},{"n":"יומא","c":51},{"n":"שקלים","c":31},{"n":"סוכה","c":36},{"n":"ראש השנה","c":26},{"n":"ביצה","c":29},{"n":"תענית","c":31},{"n":"מגילה","c":40},{"n":"חגיגה","c":26},{"n":"מועד קטן","c":23},{"n":"יבמות","c":123},{"n":"כתובות","c":93},{"n":"נדרים","c":55},{"n":"נזיר","c":47},{"n":"גיטין","c":65},{"n":"קידושין","c":58},{"n":"סוטה","c":46},{"n":"בבא קמא","c":77},{"n":"בבא מציעא","c":59},{"n":"בבא בתרא","c":68},{"n":"סנהדרין","c":71},{"n":"מכות","c":13},{"n":"שבועות","c":40},{"n":"עבודה זרה","c":47},{"n":"הוריות","c":16},{"n":"נידה","c":20}];
+                     for (const masechet of masechtot) {
+                        for (let i = 1; i <= masechet.c; i++) { // Yerushalmi daf count is simpler
+                            yield `${masechet.n} ${toHebrewNumber(i)}`;
+                        }
+                    }
+                }
+            },
+            tosefta: {
+                name: 'תוספתא (פרק יומי)',
+                unit: 'פרק',
+                *generator() {
+                    const data = [{"s":"זרעים","m":[{"n":"ברכות",c:7},{"n":"פאה",c:4},{"n":"דמאי",c:8},{"n":"כלאים",c:7},{"n":"שביעית",c:8},{"n":"תרומות",c:10},{"n":"מעשרות",c:3},{"n":"מעשר שני",c:5},{"n":"חלה",c:2},{"n":"ערלה",c:1},{"n":"ביכורים",c:2}]},{"s":"מועד","m":[{"n":"שבת",c:18},{"n":"עירובין",c:11},{"n":"פסחים",c:10},{"n":"שקלים",c:3},{"n":"יומא",c:5},{"n":"סוכה",c:4},{"n":"ביצה",c:4},{"n":"ראש השנה",c:2},{"n":"תענית",c:3},{"n":"מגילה",c:3},{"n":"מועד קטן",c:2},{"n":"חגיגה",c:3}]},{"s":"נשים","m":[{"n":"יבמות",c:14},{"n":"כתובות",c:12},{"n":"נדרים",c:7},{"n":"נזיר",c:6},{"n":"סוטה",c:15},{"n":"גיטין",c:9},{"n":"קידושין",c:5}]},{"s":"נזיקין","m":[{"n":"בבא קמא",c:11},{"n":"בבא מציעא",c:11},{"n":"בבא בתרא",c:11},{"n":"סנהדרין",c:14},{"n":"מכות",c:5},{"n":"שבועות",c:6},{"n":"עדיות",c:3},{"n":"עבודה זרה",c:9},{"n":"הוריות",c:2}]},{"s":"קדשים","m":[{"n":"זבחים",c:13},{"n":"מנחות",c:13},{"n":"חולין",c:10},{"n":"בכורות",c:7},{"n":"ערכין",c:5},{"n":"תמורה",c:4},{"n":"כריתות",c:4},{"n":"מעילה",c:3}]},{"s":"טהרות","m":[{"n":"כלים ב\"ק",c:7},{"n":"כלים ב\"מ",c:11},{"n":"כלים ב\"ב",c:7},{"n":"אהלות",c:18},{"n":"נגעים",c:9},{"n":"פרה",c:12},{"n":"טהרות",c:11},{"n":"מקוואות",c:8},{"n":"נידה",c:9},{"n":"מכשירין",c:3},{"n":"זבים",c:5},{"n":"טבול יום",c:2},{"n":"ידיים",c:2},{"n":"עוקצין",c:3}]}];
+                    for (const seder of data) {
+                        for (const masechet of seder.m) {
+                            for (let i = 1; i <= masechet.c; i++) {
+                                yield `${masechet.n} ${toHebrewNumber(i)}`;
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        // --- HELPER FUNCTIONS ---
+
+        function toHebrewNumber(num) {
+            const hebrewNumerals = { 1: 'א', 2: 'ב', 3: 'ג', 4: 'ד', 5: 'ה', 6: 'ו', 7: 'ז', 8: 'ח', 9: 'ט', 10: 'י', 20: 'כ', 30: 'ל', 40: 'מ', 50: 'נ', 60: 'ס', 70: 'ע', 80: 'פ', 90: 'צ', 100: 'ק', 200: 'ר', 300: 'ש', 400: 'ת' };
+            if (num <= 0) return ''; if (num === 15) return 'טו'; if (num === 16) return 'טז';
+            let str = ''; let n = num;
+            while(n >= 400){ str += 'ת'; n -= 400; }
+            if (n >= 100) { const h = Math.floor(n / 100) * 100; str += hebrewNumerals[h]; n %= 100; }
+            if (n >= 10) { const t = Math.floor(n / 10) * 10; str += hebrewNumerals[t]; n %= 10; }
+            if (n > 0) { str += hebrewNumerals[n]; }
+            return str;
+        }
+
+        // --- MAIN APPLICATION LOGIC ---
+
+        function populateSubjects() {
+            const select = document.getElementById('study_subject');
+            for (const key in studyData) {
+                const option = document.createElement('option');
+                option.value = key;
+                option.textContent = studyData[key].name;
+                select.appendChild(option);
+            }
+        }
+        
+        function generateAndDownloadCSV() {
+            // 1. Get user inputs
+            const subjectKey = document.getElementById('study_subject').value;
+            const durationInYears = parseInt(document.getElementById('duration_years').value, 10);
+            const startDateValue = document.getElementById('start_date').value;
+
+            // 2. Validate inputs
+            if (!subjectKey || durationInYears <= 0 || !startDateValue) {
+                alert("אנא מלאו את כל השדות בצורה תקינה.");
+                return;
+            }
+
+            // 3. Set up dates and data
+            const subject = studyData[subjectKey];
+            const startDate = new Date(startDateValue.replace(/-/g, '/'));
+            const endDate = new Date(startDate);
+            endDate.setFullYear(startDate.getFullYear() + durationInYears);
+            
+            let currentDate = new Date(startDate);
+            let csvContent = "Subject,Start Date,All Day Event\n";
+            const generator = subject.generator();
+
+            // 4. Loop through dates and generate schedule
+            while (currentDate < endDate) {
+                let cycle = generator.next();
+                if (cycle.done) {
+                    // Reset generator to loop the study cycle
+                    Object.assign(generator, subject.generator());
+                    cycle = generator.next();
+                }
+
+                const dateString = currentDate.toISOString().split('T')[0];
+                const subjectTitle = `${subject.name.split(' ')[0]}: ${cycle.value}`;
+                
+                csvContent += `"${subjectTitle}","${dateString}","True"\n`;
+                
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+
+            // 5. Create and download the file
+            const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = `limud_plan_${subjectKey}.csv`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // --- INITIALIZATION ---
+        
+        window.onload = () => {
+            populateSubjects();
+            // Set default start date to today
+            document.getElementById('start_date').valueAsDate = new Date();
+        };
+
+    </script>
+
+</body>
+</html>
